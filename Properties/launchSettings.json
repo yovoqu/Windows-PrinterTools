@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "WindowsPrinter": {
+      "commandName": "Project"
+    }
+  }
+}

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="WindowsPrinter.Views.Components.PrintSettingsPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:WindowsPrinter.ViewModels"
+    d:DataContext="{d:DesignInstance vm:PrintSettingsViewModel, IsDesignTimeCreatable=False}"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <StackPanel Spacing="16">
+        <TextBlock
+            Style="{ThemeResource SubtitleTextBlockStyle}"
+            Text="打印设置" />
+
+        <StackPanel Spacing="8">
+            <TextBlock Text="打印机" />
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ComboBox
+                    Grid.Column="0"
+                    HorizontalAlignment="Stretch"
+                    DisplayMemberPath="DisplayName"
+                    IsEnabled="{Binding IsPrinterComboEnabled}"
+                    ItemsSource="{Binding Printers}"
+                    PlaceholderText="选择打印机"
+                    SelectedItem="{Binding SelectedPrinter, Mode=TwoWay}" />
+                <Button
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Command="{Binding RefreshPrintersCommand}"
+                    ToolTipService.ToolTip="刷新打印机列表">
+                    <FontIcon Glyph="&#xE72C;" />
+                </Button>
+                <ProgressRing
+                    Grid.Column="2"
+                    Width="24"
+                    Height="24"
+                    IsActive="{Binding IsLoadingPrinters}"
+                    Visibility="{Binding IsLoadingPrinters, Converter={StaticResource BoolToVis}}" />
+            </Grid>
+            <InfoBar
+                IsClosable="False"
+                IsOpen="{Binding HasPrinterLoadError}"
+                Message="{Binding PrinterLoadError}"
+                Severity="Warning" />
+        </StackPanel>
+
+        <StackPanel Spacing="8">
+            <TextBlock Text="色彩模式" />
+            <ToggleSwitch
+                OffContent="黑白"
+                OnContent="彩色"
+                IsOn="{Binding UseColor, Mode=TwoWay}" />
+        </StackPanel>
+
+        <Expander Header="支持的文件格式" IsExpanded="False">
+            <StackPanel Spacing="4">
+                <TextBlock Text="PDF：.pdf" />
+                <TextBlock Text="图片：.jpg .jpeg .png .bmp .gif .tif .tiff .webp" />
+                <TextBlock Text="Office：.doc .docx .xls .xlsx .ppt .pptx .rtf" />
+                <TextBlock Text="文本：.txt .log .md .csv" />
+            </StackPanel>
+        </Expander>
+    </StackPanel>
+</UserControl>
