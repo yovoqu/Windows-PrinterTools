@@ -3,8 +3,16 @@ using Microsoft.UI.Xaml;
 using Microsoft.Windows.ApplicationModel.DynamicDependency;
 using WindowsPrinter.Services;
 using WindowsPrinter.Services.Abstractions;
+using WindowsPrinter.Services.Storage;
 using WindowsPrinter.Services.Discovery;
+using WindowsPrinter.Services.Preferences;
+using WindowsPrinter.Services.Logging;
+using WindowsPrinter.Services.Printing;
+using WindowsPrinter.Services.Printing.Handlers;
+using WindowsPrinter.Services.Printing.Preview;
+using WindowsPrinter.Services.Printing.Shell;
 using WindowsPrinter.ViewModels;
+using WindowsPrinter.Services.Composition;
 using WindowsPrinter.Views;
 
 namespace WindowsPrinter;
@@ -13,10 +21,10 @@ public partial class App : Application
 {
     private static readonly string CrashLogPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "WindowsPrinter",
+        LocalAppStore.AppFolderName,
         "crash.log");
 
-    public static Window? MainWindow { get; private set; }
+    public static MainWindow? MainWindow { get; private set; }
 
     public static IServiceProvider Services { get; private set; } = null!;
 
@@ -36,6 +44,7 @@ public partial class App : Application
         {
             MainWindow = new MainWindow();
             MainWindow.Activate();
+            _ = AppBootstrap.LoadWorkspaceAsync(MainWindow);
         }
         catch (Exception ex)
         {
@@ -62,12 +71,36 @@ public partial class App : Application
     private static ServiceProvider ConfigureServices()
     {
         var services = new ServiceCollection();
+
+        services.AddSingleton<ILocalAppStore, LocalAppStore>();
         services.AddSingleton<IPrinterDiscoveryService, CompositePrinterDiscoveryService>();
-        services.AddSingleton<IPrintQueueService, PrintQueueService>();
+        services.AddSingleton<IWindowHandleProvider, WindowHandleProvider>();
+        services.AddSingleton<IAppDiagnostics, AppDiagnosticsService>();
+        services.AddSingleton<IUiDispatcher, UiDispatcher>();
+        services.AddSingleton<IPrintSessionLog, PrintSessionLogService>();
         services.AddSingleton<IFilePickerService, FilePickerService>();
-        services.AddTransient<PrintSettingsViewModel>();
-        services.AddTransient<PrintQueueViewModel>();
-        services.AddTransient<PrintWorkspaceViewModel>();
+        services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
+
+        services.AddSingleton<IShellPrintCapabilityService, ShellPrintCapabilityService>();
+        services.AddSingleton<IShellPrintService, ShellPrintService>();
+        services.AddSingleton<IPrintPreviewService, PrintPreviewService>();
+
+        services.AddSingleton<IFilePrintHandler, PdfPrintHandler>();
+        services.AddSingleton<IFilePrintHandler, ImagePrintHandler>();
+        services.AddSingleton<IFilePrintHandler, TextPrintHandler>();
+        services.AddSingleton<IFilePrintHandler, ShellPrintHandlerAdapter>();
+        services.AddSingleton<IPrintHandlerRegistry, PrintHandlerRegistry>();
+        services.AddSingleton<IPrintFileItemFactory, PrintFileItemFactory>();
+        services.AddSingleton<IPrintEnvironmentService, PrintEnvironmentService>();
+        services.AddSingleton<IPrintOrchestrator, PrintOrchestrator>();
+        services.AddSingleton<IPrintQueueService, PrintQueueService>();
+
+        services.AddSingleton<PrintQueueViewModel>();
+        services.AddSingleton<PrintSettingsViewModel>();
+        services.AddSingleton<PrintLogViewModel>();
+        services.AddSingleton<PrintWorkspaceViewModel>();
+        services.AddSingleton<IWorkspaceSession, WorkspaceSession>();
+
         return services.BuildServiceProvider();
     }
 }

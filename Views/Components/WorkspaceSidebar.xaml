@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="WindowsPrinter.Views.Components.WorkspaceSidebar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:components="using:WindowsPrinter.Views.Components"
+    xmlns:vm="using:WindowsPrinter.ViewModels"
+    d:DataContext="{d:DesignInstance vm:PrintWorkspaceViewModel, IsDesignTimeCreatable=False}"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    HorizontalContentAlignment="Stretch"
+    VerticalContentAlignment="Stretch"
+    mc:Ignorable="d">
+
+    <Grid
+        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        CornerRadius="8">
+        <TabView
+            x:Name="SidebarTabs"
+            IsAddTabButtonVisible="False"
+            SelectionChanged="OnTabSelectionChanged"
+            TabWidthMode="Equal"
+            VerticalAlignment="Stretch">
+            <TabViewItem Header="打印设置" IsClosable="False">
+                <components:PrintSettingsPanel DataContext="{Binding Settings, Mode=OneWay}" />
+            </TabViewItem>
+            <TabViewItem x:Name="LogTab" Header="打印日志" IsClosable="False">
+                <Grid x:Name="LogHost" />
+            </TabViewItem>
+        </TabView>
+    </Grid>
+</UserControl>

@@ -17,34 +17,82 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <CommandBar Grid.Row="0" DefaultLabelPosition="Right" IsOpen="False">
+        <CommandBar Grid.Row="0" DefaultLabelPosition="Right" IsDynamicOverflowEnabled="True" IsOpen="False">
             <AppBarButton
-                Icon="Add"
+                AutomationProperties.Name="添加文件"
                 Label="添加文件"
-                Command="{Binding AddFilesCommand}" />
+                Command="{Binding AddFilesCommand}">
+                <AppBarButton.Icon>
+                    <FontIcon
+                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                        Glyph="{StaticResource AppGlyphAdd}" />
+                </AppBarButton.Icon>
+            </AppBarButton>
             <AppBarButton
-                Icon="OpenFolder"
+                AutomationProperties.Name="添加文件夹"
                 Label="添加文件夹"
-                Command="{Binding AddFolderCommand}" />
+                Command="{Binding AddFolderCommand}">
+                <AppBarButton.Icon>
+                    <FontIcon
+                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                        Glyph="{StaticResource AppGlyphFolder}" />
+                </AppBarButton.Icon>
+            </AppBarButton>
             <AppBarSeparator />
             <AppBarButton
-                Icon="SelectAll"
+                AutomationProperties.Name="全选"
                 Label="全选"
-                Command="{Binding SelectAllCommand}" />
+                Command="{Binding SelectAllCommand}">
+                <AppBarButton.Icon>
+                    <FontIcon
+                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                        Glyph="{StaticResource AppGlyphSelectAll}" />
+                </AppBarButton.Icon>
+            </AppBarButton>
             <AppBarButton
-                Icon="ClearSelection"
+                AutomationProperties.Name="取消选择"
                 Label="取消选择"
-                Command="{Binding ClearSelectionCommand}" />
+                Command="{Binding ClearSelectionCommand}">
+                <AppBarButton.Icon>
+                    <FontIcon
+                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                        Glyph="{StaticResource AppGlyphClearSelection}" />
+                </AppBarButton.Icon>
+            </AppBarButton>
             <AppBarButton
-                Icon="Delete"
+                AutomationProperties.Name="移除选中文件"
                 Label="移除"
-                Command="{Binding RemoveSelectedCommand}" />
+                Command="{Binding RemoveSelectedCommand}">
+                <AppBarButton.Icon>
+                    <FontIcon
+                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                        Glyph="{StaticResource AppGlyphDelete}" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarSeparator />
+            <AppBarButton
+                AutomationProperties.Name="清空队列"
+                Label="清空队列"
+                Command="{Binding ClearQueueCommand}">
+                <AppBarButton.Icon>
+                    <FontIcon
+                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                        Glyph="{StaticResource AppGlyphClear}" />
+                </AppBarButton.Icon>
+            </AppBarButton>
             <CommandBar.Content>
                 <AutoSuggestBox
-                    MinWidth="220"
+                    MinWidth="160"
+                    MaxWidth="320"
+                    HorizontalAlignment="Stretch"
                     PlaceholderText="搜索文件名或路径..."
-                    QueryIcon="Find"
-                    Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <AutoSuggestBox.QueryIcon>
+                        <FontIcon
+                            FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                            Glyph="{StaticResource AppGlyphFind}" />
+                    </AutoSuggestBox.QueryIcon>
+                </AutoSuggestBox>
             </CommandBar.Content>
         </CommandBar>
 
@@ -52,6 +100,7 @@
             x:Name="QueueTable"
             Grid.Row="1"
             Margin="0,8,0,0"
+            AllowDrop="True"
             AutoGenerateColumns="False"
             CanResizeColumns="True"
             GridLinesVisibility="Horizontal"
@@ -72,14 +121,18 @@
                 <tv:TableViewTextColumn
                     Header="文件名"
                     Binding="{Binding FileName}"
-                    Width="2*" />
+                    Width="240" />
                 <tv:TableViewTextColumn
                     Header="路径"
                     Binding="{Binding DisplayPath}"
-                    Width="2*" />
+                    Width="320" />
                 <tv:TableViewTextColumn
                     Header="类型"
                     Binding="{Binding FileTypeText}"
+                    Width="100" />
+                <tv:TableViewTextColumn
+                    Header="方式"
+                    Binding="{Binding HandlerText}"
                     Width="120" />
                 <tv:TableViewTextColumn
                     Header="大小"
@@ -112,12 +165,18 @@
             <TextBlock
                 HorizontalAlignment="Center"
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="队列为空，添加文件或文件夹开始打印" />
-            <Button
-                HorizontalAlignment="Center"
-                Content="添加文件"
-                Style="{ThemeResource AccentButtonStyle}"
-                Command="{Binding AddFilesCommand}" />
+                Text="队列为空，添加或拖放文件开始打印" />
+            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="12">
+                <Button
+                    AutomationProperties.Name="添加文件"
+                    Content="添加文件"
+                    Style="{ThemeResource AccentButtonStyle}"
+                    Command="{Binding AddFilesCommand}" />
+                <Button
+                    AutomationProperties.Name="添加文件夹"
+                    Content="添加文件夹"
+                    Command="{Binding AddFolderCommand}" />
+            </StackPanel>
         </StackPanel>
     </Grid>
 </UserControl>

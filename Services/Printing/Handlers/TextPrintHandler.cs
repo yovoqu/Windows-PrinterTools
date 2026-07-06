@@ -1,17 +1,20 @@
 using System.Drawing;
 using System.Drawing.Printing;
 using WindowsPrinter.Infrastructure;
-using WindowsPrinter.Services.Printing.Handlers;
+using WindowsPrinter.Models;
 
 namespace WindowsPrinter.Services.Printing.Handlers;
 
 public sealed class TextPrintHandler : IFilePrintHandler
 {
-    private static readonly HashSet<string> Extensions = [".txt", ".log", ".md", ".csv"];
-
     public PrintHandlerKind Kind => PrintHandlerKind.Text;
 
-    public bool CanHandle(string extension) => Extensions.Contains(extension);
+    public IReadOnlySet<string> SupportedExtensions { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ".txt", ".log", ".md", ".csv"
+    };
+
+    public bool CanHandle(string extension) => SupportedExtensions.Contains(extension);
 
     public Task PrintAsync(PrintRequest request, CancellationToken cancellationToken)
     {
@@ -25,6 +28,8 @@ public sealed class TextPrintHandler : IFilePrintHandler
             using var printDocument = GdiPrintHelper.CreatePrintDocument(request.PrinterName);
             printDocument.PrintPage += (_, e) =>
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 using var font = new Font("Consolas", 10);
                 using var brush = new SolidBrush(Color.Black);
                 var bounds = e.MarginBounds;

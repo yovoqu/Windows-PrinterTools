@@ -1,29 +1,23 @@
-using WindowsPrinter.Infrastructure;
-using WindowsPrinter.Services.Printing.Handlers;
+using WindowsPrinter.Models;
+using WindowsPrinter.Services.Printing.Shell;
 
 namespace WindowsPrinter.Services.Printing.Handlers;
 
-public static class ShellPrintHandler
-{
-    private static readonly HashSet<string> Extensions =
-        [".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".rtf", ".webp"];
-
-    public static bool CanHandle(string extension) => Extensions.Contains(extension);
-
-    public static Task PrintViaShellAsync(PrintRequest request, CancellationToken cancellationToken) =>
-        Task.Run(() =>
-        {
-            NativePrintHelper.PrintWithShell(request.FilePath, request.PrinterName);
-            NativePrintHelper.WaitForSpoolerJob(request.PrinterName, TimeSpan.FromSeconds(45), cancellationToken);
-        }, cancellationToken);
-}
-
 public sealed class ShellPrintHandlerAdapter : IFilePrintHandler
 {
+    private readonly IShellPrintService _shellPrint;
+
+    public ShellPrintHandlerAdapter(IShellPrintService shellPrint) => _shellPrint = shellPrint;
+
     public PrintHandlerKind Kind => PrintHandlerKind.Shell;
 
-    public bool CanHandle(string extension) => ShellPrintHandler.CanHandle(extension);
+    public IReadOnlySet<string> SupportedExtensions { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".rtf", ".webp"
+    };
+
+    public bool CanHandle(string extension) => SupportedExtensions.Contains(extension);
 
     public Task PrintAsync(PrintRequest request, CancellationToken cancellationToken) =>
-        ShellPrintHandler.PrintViaShellAsync(request, cancellationToken);
+        _shellPrint.PrintAsync(request, cancellationToken);
 }

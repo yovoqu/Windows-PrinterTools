@@ -17,11 +17,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="WindowsPrinter.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="tools\**" />
+    <Compile Remove="WindowsPrinter.Tests\**" />
     <Content Remove="tools\**" />
+    <Content Remove="WindowsPrinter.Tests\**" />
     <EmbeddedResource Remove="tools\**" />
+    <EmbeddedResource Remove="WindowsPrinter.Tests\**" />
     <None Remove="tools\**" />
+    <None Remove="WindowsPrinter.Tests\**" />
     <Page Remove="tools\**" />
+    <Page Remove="WindowsPrinter.Tests\**" />
   </ItemGroup>
 
   <ItemGroup>

@@ -5,48 +5,136 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:components="using:WindowsPrinter.Views.Components"
     xmlns:local="using:WindowsPrinter.Views"
+    xmlns:vm="using:WindowsPrinter.ViewModels"
     x:DataType="local:PrintWorkspacePage">
 
-    <Grid Padding="24,16" DataContext="{x:Bind ViewModel, Mode=OneWay}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <Grid x:Name="PageRoot" Background="{ThemeResource LayerFillColorDefaultBrush}">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="WidthStates">
+                <VisualState x:Name="Wide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1280" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="PageContent.Margin" Value="24,16,24,0" />
+                        <Setter Target="SidebarColumn.Width" Value="420" />
+                        <Setter Target="WorkspaceHost.ColumnSpacing" Value="16" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Standard">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1008" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="PageContent.Margin" Value="20,16,20,0" />
+                        <Setter Target="SidebarColumn.Width" Value="380" />
+                        <Setter Target="WorkspaceHost.ColumnSpacing" Value="16" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Compact">
+                    <VisualState.Setters>
+                        <Setter Target="PageContent.Margin" Value="12,12,12,0" />
+                        <Setter Target="SidebarColumn.Width" Value="300" />
+                        <Setter Target="WorkspaceHost.ColumnSpacing" Value="12" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,16" Spacing="4">
-            <TextBlock Style="{ThemeResource TitleTextBlockStyle}" Text="文件打印" />
-            <TextBlock
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="添加文件或文件夹，选择打印机后开始批量打印。" />
-        </StackPanel>
+        <Grid
+            x:Name="PageContent"
+            DataContext="{x:Bind ViewModel, Mode=OneWay}"
+            Margin="20,16,20,0"
+            x:DataType="vm:PrintWorkspaceViewModel">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" MinHeight="0" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-        <TwoPaneView
-            Grid.Row="1"
-            MinWideModeWidth="960"
-            Pane1Length="2*"
-            Pane2Length="*">
-            <TwoPaneView.Pane1>
-                <components:PrintQueuePanel DataContext="{Binding Queue, Mode=OneWay}" />
-            </TwoPaneView.Pane1>
-            <TwoPaneView.Pane2>
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <components:PrintSettingsPanel
-                        Padding="16,0,0,0"
-                        DataContext="{Binding Settings, Mode=OneWay}" />
-                </ScrollViewer>
-            </TwoPaneView.Pane2>
-        </TwoPaneView>
+            <StackPanel Grid.Row="0" Spacing="4">
+                <TextBlock Style="{ThemeResource TitleTextBlockStyle}" Text="文件打印" />
+                <TextBlock
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="添加文件或文件夹，选择打印机后开始批量打印。支持拖放；PDF/图片/文本可预览。"
+                    TextWrapping="WrapWholeWords" />
+            </StackPanel>
 
-        <InfoBar
-            Grid.Row="2"
-            Margin="0,12,0,0"
-            IsClosable="True"
-            IsOpen="{Binding IsStatusOpen, Mode=TwoWay}"
-            Message="{Binding StatusMessage, Mode=OneWay}"
-            Severity="{Binding StatusSeverity, Converter={StaticResource SeverityToInfoBar}}" />
+            <Grid
+                x:Name="WorkspaceHost"
+                Grid.Row="1"
+                Margin="0,16,0,0"
+                ColumnSpacing="16"
+                MinHeight="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="0" />
+                    <ColumnDefinition
+                        x:Name="SidebarColumn"
+                        Width="380"
+                        MinWidth="280"
+                        MaxWidth="440" />
+                </Grid.ColumnDefinitions>
 
-        <components:PrintActionBar Grid.Row="3" Margin="-24,-16" />
+                <components:PrintQueuePanel
+                    Grid.Column="0"
+                    MinWidth="0"
+                    DataContext="{Binding Queue, Mode=OneWay}" />
+
+                <components:WorkspaceSidebar
+                    Grid.Column="1"
+                    MinWidth="0"
+                    HorizontalAlignment="Stretch" />
+            </Grid>
+
+            <InfoBar
+                Grid.Row="2"
+                Margin="0,12,0,0"
+                IsClosable="True"
+                IsOpen="{Binding IsStatusOpen, Mode=TwoWay}"
+                Message="{Binding StatusMessage, Mode=OneWay}"
+                Severity="{Binding StatusSeverity, Converter={StaticResource SeverityToInfoBar}}" />
+
+            <components:PrintActionBar Grid.Row="3" Margin="0,16,0,0" />
+        </Grid>
+
+        <Grid
+            Background="#99000000"
+            Visibility="{x:Bind ViewModel.IsPreviewOpen, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+            <Border
+                MaxWidth="720"
+                MaxHeight="640"
+                Margin="24"
+                Padding="16"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8">
+                <Grid RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock
+                        Style="{ThemeResource SubtitleTextBlockStyle}"
+                        Text="{x:Bind ViewModel.PreviewCaption, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis" />
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <Image
+                            HorizontalAlignment="Center"
+                            Source="{x:Bind ViewModel.PreviewImageSource, Mode=OneWay}"
+                            Stretch="Uniform" />
+                    </ScrollViewer>
+                    <Button
+                        Grid.Row="2"
+                        HorizontalAlignment="Right"
+                        Command="{x:Bind ViewModel.ClosePreviewCommand}"
+                        Content="关闭" />
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </Page>

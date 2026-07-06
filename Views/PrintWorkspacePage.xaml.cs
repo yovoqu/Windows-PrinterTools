@@ -8,9 +8,9 @@ public sealed partial class PrintWorkspacePage : Page
 {
     public PrintWorkspaceViewModel ViewModel { get; }
 
-    public PrintWorkspacePage()
+    public PrintWorkspacePage(PrintWorkspaceViewModel viewModel)
     {
-        ViewModel = App.GetRequiredService<PrintWorkspaceViewModel>();
+        ViewModel = viewModel;
         DataContext = ViewModel;
         InitializeComponent();
     }

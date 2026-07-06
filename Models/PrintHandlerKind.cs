@@ -1,4 +1,4 @@
-namespace WindowsPrinter.Services.Printing.Handlers;
+namespace WindowsPrinter.Models;
 
 public enum PrintHandlerKind
 {

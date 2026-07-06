@@ -1,23 +1,24 @@
 using System.Drawing;
 using System.Drawing.Printing;
 using WindowsPrinter.Infrastructure;
-using WindowsPrinter.Services.Printing.Handlers;
+using WindowsPrinter.Models;
+using WindowsPrinter.Services.Printing.Shell;
 
 namespace WindowsPrinter.Services.Printing.Handlers;
 
 public sealed class ImagePrintHandler : IFilePrintHandler
 {
-    private static readonly HashSet<string> Extensions = [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff"];
-
     public PrintHandlerKind Kind => PrintHandlerKind.Image;
 
-    public bool CanHandle(string extension) => Extensions.Contains(extension);
+    public IReadOnlySet<string> SupportedExtensions { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff"
+    };
+
+    public bool CanHandle(string extension) => SupportedExtensions.Contains(extension);
 
     public Task PrintAsync(PrintRequest request, CancellationToken cancellationToken)
     {
-        if (request.FilePath.EndsWith(".webp", StringComparison.OrdinalIgnoreCase))
-            return ShellPrintHandler.PrintViaShellAsync(request, cancellationToken);
-
         cancellationToken.ThrowIfCancellationRequested();
         return Task.Run(() =>
         {
@@ -25,6 +26,7 @@ public sealed class ImagePrintHandler : IFilePrintHandler
             using var printDocument = GdiPrintHelper.CreatePrintDocument(request.PrinterName);
             printDocument.PrintPage += (_, e) =>
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 GdiPrintHelper.DrawScaledImage(e.Graphics!, image, e.MarginBounds, request.UseColor);
                 e.HasMorePages = false;
             };

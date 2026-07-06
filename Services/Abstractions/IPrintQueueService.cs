@@ -17,8 +17,7 @@ public interface IPrintQueueService
 {
     Task<PrintQueueResult> ProcessAsync(
         IReadOnlyList<PrintFileItem> files,
-        string printerName,
-        bool useColor,
+        PrintSettings settings,
         IProgress<(PrintFileItem file, int current, int total)>? progress = null,
         CancellationToken cancellationToken = default);
 }

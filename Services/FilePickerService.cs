@@ -6,11 +6,20 @@ namespace WindowsPrinter.Services;
 
 public sealed class FilePickerService : IFilePickerService
 {
+    private readonly IWindowHandleProvider _windowHandle;
+    private readonly IAppDiagnostics _diagnostics;
+
+    public FilePickerService(IWindowHandleProvider windowHandle, IAppDiagnostics diagnostics)
+    {
+        _windowHandle = windowHandle;
+        _diagnostics = diagnostics;
+    }
+
     public async Task<IReadOnlyList<string>> PickFilesAsync(IReadOnlyList<string> extensions)
     {
-        var window = App.MainWindow;
-        if (window is null)
+        if (!_windowHandle.IsAvailable)
         {
+            _diagnostics.LogWarning(nameof(FilePickerService), "Main window is not available; file picker cannot be shown.");
             return [];
         }
 
@@ -25,7 +34,7 @@ public sealed class FilePickerService : IFilePickerService
             picker.FileTypeFilter.Add(extension);
         }
 
-        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(window));
+        InitializeWithWindow.Initialize(picker, _windowHandle.GetWindowHandle());
 
         var files = await picker.PickMultipleFilesAsync();
         if (files is null || files.Count == 0)
@@ -38,9 +47,9 @@ public sealed class FilePickerService : IFilePickerService
 
     public async Task<string?> PickFolderAsync()
     {
-        var window = App.MainWindow;
-        if (window is null)
+        if (!_windowHandle.IsAvailable)
         {
+            _diagnostics.LogWarning(nameof(FilePickerService), "Main window is not available; folder picker cannot be shown.");
             return null;
         }
 
@@ -52,7 +61,7 @@ public sealed class FilePickerService : IFilePickerService
 
         picker.FileTypeFilter.Add("*");
 
-        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(window));
+        InitializeWithWindow.Initialize(picker, _windowHandle.GetWindowHandle());
 
         var folder = await picker.PickSingleFolderAsync();
         return folder?.Path;

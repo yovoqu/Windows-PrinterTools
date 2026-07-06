@@ -1,7 +1,7 @@
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Printing;
+using WindowsPrinter.Infrastructure;
 
 namespace WindowsPrinter.Infrastructure;
 
@@ -21,8 +21,8 @@ internal static class GdiPrintHelper
         var x = bounds.Left + (bounds.Width - width) / 2;
         var y = bounds.Top + (bounds.Height - height) / 2;
 
-        graphics.CompositingQuality = CompositingQuality.HighQuality;
-        graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+        graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+        graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
 
         if (useColor)
         {
@@ -60,5 +60,37 @@ internal static class GdiPrintHelper
         using var stream = File.OpenRead(filePath);
         using var reader = new StreamReader(stream, detectEncodingFromByteOrderMarks: true);
         return reader.ReadToEnd();
+    }
+
+    public static byte[] RenderImageToPngBytes(Image image)
+    {
+        using var memory = new MemoryStream();
+        image.Save(memory, ImageFormat.Png);
+        return memory.ToArray();
+    }
+
+    public static byte[] RenderTextPreviewPng(string filePath, int maxLines = 40)
+    {
+        var content = ReadTextWithEncoding(filePath);
+        var lines = content.Replace("\r\n", "\n").Split('\n').Take(maxLines).ToArray();
+
+        const int width = 816;
+        const int height = 1056;
+        using var bitmap = new Bitmap(width, height);
+        using var graphics = Graphics.FromImage(bitmap);
+        graphics.Clear(Color.White);
+        using var font = new Font("Consolas", 10);
+        using var brush = new SolidBrush(Color.Black);
+
+        var y = 24;
+        var lineHeight = (int)graphics.MeasureString("A", font).Height;
+        foreach (var line in lines)
+        {
+            if (y + lineHeight > height - 24) break;
+            graphics.DrawString(line, font, brush, 24, y);
+            y += lineHeight;
+        }
+
+        return RenderImageToPngBytes(bitmap);
     }
 }

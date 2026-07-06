@@ -1,12 +1,19 @@
 using System.Runtime.InteropServices;
+using WindowsPrinter.Models;
+using WindowsPrinter.Services.Printing;
 
 namespace WindowsPrinter.Infrastructure;
 
 internal static class NativePrintHelper
 {
+    private const int DmCopies = 0x00000100;
     private const int DmColor = 0x00000800;
+    private const int DmDuplex = 0x00001000;
     private const short DmColorMonochrome = 1;
     private const short DmColorColor = 2;
+    private const short DmDupSimplex = 1;
+    private const short DmDupVertical = 2;
+    private const short DmDupHorizontal = 3;
     private const uint PrinterEnumLocal = 0x00000002;
     private const uint PrinterEnumConnections = 0x00000010;
 
@@ -134,28 +141,42 @@ internal static class NativePrintHelper
         return printers.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(p => p).ToList();
     }
 
-    public static void ApplyColorMode(string printerName, bool useColor)
+    public static PrintEnvironmentResult ApplyPrintSettings(PrintSettings settings)
     {
-        if (!OpenPrinter(printerName, out var printerHandle, IntPtr.Zero))
-            throw new InvalidOperationException($"无法打开打印机：{printerName}");
+        if (!OpenPrinter(settings.PrinterName, out var printerHandle, IntPtr.Zero))
+            return PrintEnvironmentResult.Failure($"无法打开打印机：{settings.PrinterName}{FormatWin32Error()}");
 
         try
         {
-            var requiredSize = DocumentProperties(IntPtr.Zero, printerHandle, printerName, IntPtr.Zero, IntPtr.Zero, 0);
-            if (requiredSize <= 0) return;
+            var requiredSize = DocumentProperties(IntPtr.Zero, printerHandle, settings.PrinterName, IntPtr.Zero, IntPtr.Zero, 0);
+            if (requiredSize <= 0)
+                return PrintEnvironmentResult.Failure($"无法获取打印机“{settings.PrinterName}”的 DEVMODE 大小{FormatWin32Error()}");
 
             var devModePtr = Marshal.AllocHGlobal(requiredSize);
             try
             {
-                if (DocumentProperties(IntPtr.Zero, printerHandle, printerName, devModePtr, IntPtr.Zero, 0x2) < 0) return;
+                if (DocumentProperties(IntPtr.Zero, printerHandle, settings.PrinterName, devModePtr, IntPtr.Zero, 0x2) < 0)
+                    return PrintEnvironmentResult.Failure($"无法读取打印机“{settings.PrinterName}”的 DEVMODE{FormatWin32Error()}");
 
                 var devMode = Marshal.PtrToStructure<DevMode>(devModePtr);
-                devMode.DmFields |= DmColor;
-                devMode.DmColor = useColor ? DmColorColor : DmColorMonochrome;
+                devMode.DmFields |= DmColor | DmCopies | DmDuplex;
+                devMode.DmColor = settings.UseColor ? DmColorColor : DmColorMonochrome;
+                devMode.DmCopies = (short)Math.Clamp(settings.Copies, (short)1, (short)99);
+                devMode.DmDuplex = settings.Duplex switch
+                {
+                    PrintDuplexMode.LongEdge => DmDupHorizontal,
+                    PrintDuplexMode.ShortEdge => DmDupVertical,
+                    _ => DmDupSimplex
+                };
                 Marshal.StructureToPtr(devMode, devModePtr, false);
 
-                if (DocumentProperties(IntPtr.Zero, printerHandle, printerName, devModePtr, devModePtr, 0xA) < 0) return;
-                SetPrinter(printerHandle, 9, devModePtr, 0);
+                if (DocumentProperties(IntPtr.Zero, printerHandle, settings.PrinterName, devModePtr, devModePtr, 0xA) < 0)
+                    return PrintEnvironmentResult.Failure($"无法合并打印机“{settings.PrinterName}”的打印设置{FormatWin32Error()}");
+
+                if (!SetPrinter(printerHandle, 9, devModePtr, 0))
+                    return PrintEnvironmentResult.Failure($"无法将打印设置应用到打印机“{settings.PrinterName}”{FormatWin32Error()}");
+
+                return PrintEnvironmentResult.Success();
             }
             finally
             {
@@ -167,6 +188,7 @@ internal static class NativePrintHelper
             ClosePrinter(printerHandle);
         }
     }
+
 
     public static void PrintWithShell(string filePath, string printerName)
     {
@@ -190,6 +212,14 @@ internal static class NativePrintHelper
             }
             Thread.Sleep(200);
         }
+
+        throw new TimeoutException($"等待打印机“{printerName}”的打印队列超时（{timeout.TotalSeconds:0} 秒）。");
+    }
+
+    private static string FormatWin32Error()
+    {
+        var code = Marshal.GetLastWin32Error();
+        return code == 0 ? string.Empty : $"（错误代码 {code}）";
     }
 
     private static int GetJobCount(string printerName)

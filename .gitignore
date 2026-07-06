@@ -8,6 +8,7 @@
 *.suo
 *.userosscache
 *.sln.docstates
+*.rsuser
 artifacts/
 
 # Build logs
@@ -16,8 +17,12 @@ artifacts/
 *.log
 *.binlog
 
+# Test project (local debug only — not published)
+WindowsPrinter.Tests/
+
 # Test results
 [Tt]est[Rr]esult*/
+[Bb]enchmark[Dd]ot[Nn]et.Artifacts/
 *.trx
 *.coverage
 *.coveragexml
@@ -28,8 +33,14 @@ artifacts/
 *.nuget.props
 *.nuget.targets
 project.lock.json
+project.fragment.lock.json
+packages/
+.nuget/
 
-# MSIX packaging output
+# Machine-specific NuGet config (local package folder paths)
+nuget.config
+
+# MSIX / WinUI packaging output
 AppPackages/
 BundleArtifacts/
 *.msix
@@ -37,6 +48,9 @@ BundleArtifacts/
 *.appx
 *.appxbundle
 *.appxupload
+*.xbf
+*.pri
+*.pri.xml
 
 # Publish output
 publish/
@@ -48,7 +62,31 @@ _ReSharper*/
 *.DotSettings.user
 *.dotCover
 .idea/
+*.sln.iml
+
+# IDE / editor (local preferences)
+.cursor/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/tasks.json
 
 # Generated files
 Generated\ Files/
 *_wpftmp.csproj
+
+# OS junk
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Secrets and signing
+*.pfx
+*.p12
+*.snk
+secrets.json
+appsettings.*.local.json
+
+# Merge / backup
+*.orig
+*.bak
+*~

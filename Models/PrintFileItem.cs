@@ -1,7 +1,5 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using WindowsPrinter.Services.Printing;
-using WindowsPrinter.Services.Printing.Handlers;
 
 namespace WindowsPrinter.Models;
 
@@ -11,11 +9,17 @@ public sealed class PrintFileItem : INotifyPropertyChanged
     private PrintJobStatus _status = PrintJobStatus.Pending;
     private string? _errorMessage;
 
-    public PrintFileItem(string filePath, string? folderRoot = null)
+    public PrintFileItem(
+        string filePath,
+        PrintHandlerKind handlerKind,
+        string handlerText,
+        string? folderRoot = null)
     {
         FilePath = filePath;
         FileName = Path.GetFileName(filePath);
         Extension = Path.GetExtension(filePath).ToLowerInvariant();
+        HandlerKind = handlerKind;
+        HandlerText = handlerText;
         RelativePathText = GetRelativePathText(filePath, folderRoot);
         DisplayPath = string.IsNullOrWhiteSpace(RelativePathText)
             ? Path.GetDirectoryName(filePath) ?? string.Empty
@@ -35,16 +39,16 @@ public sealed class PrintFileItem : INotifyPropertyChanged
         FileSizeBytes = fileSize;
         FileSizeText = FormatSize(fileSize);
         FileTypeText = GetFileTypeText(Extension);
-        HandlerText = GetHandlerText(Extension);
     }
 
     public string FilePath { get; }
     public string FileName { get; }
     public string Extension { get; }
+    public PrintHandlerKind HandlerKind { get; }
+    public string HandlerText { get; }
     public long FileSizeBytes { get; }
     public string FileSizeText { get; }
     public string FileTypeText { get; }
-    public string HandlerText { get; }
     public string DisplayPath { get; }
     public string? RelativePathText { get; }
     public bool HasRelativePath => !string.IsNullOrEmpty(RelativePathText);
@@ -109,21 +113,10 @@ public sealed class PrintFileItem : INotifyPropertyChanged
         _ => "其他文件"
     };
 
-    private static string GetHandlerText(string extension) => PrintHandlerFactory.GetHandlerKind(extension) switch
-    {
-        PrintHandlerKind.Pdf => "原生 PDF",
-        PrintHandlerKind.Image => "图片渲染",
-        PrintHandlerKind.Text => "文本渲染",
-        PrintHandlerKind.Shell => "系统关联程序",
-        _ => "未知"
-    };
-
     private static string? GetRelativePathText(string filePath, string? folderRoot)
     {
         if (string.IsNullOrWhiteSpace(folderRoot))
-        {
             return null;
-        }
 
         var relative = Path.GetRelativePath(folderRoot, filePath);
         var fileName = Path.GetFileName(filePath);
