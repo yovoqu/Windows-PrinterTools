@@ -17,6 +17,9 @@ public sealed partial class PrintWorkspaceViewModel : ObservableObject
     private readonly IPrintPreviewService _previewService;
     private readonly IPrintSessionLog _log;
     private CancellationTokenSource? _printCts;
+    private CancellationTokenSource? _statusDismissCts;
+
+    private static readonly TimeSpan StatusAutoDismissDelay = TimeSpan.FromSeconds(3);
 
     public PrintWorkspaceViewModel(
         PrintQueueViewModel queue,
@@ -94,6 +97,12 @@ public sealed partial class PrintWorkspaceViewModel : ObservableObject
             PreviewImageSource = null;
     }
 
+    partial void OnIsStatusOpenChanged(bool value)
+    {
+        if (!value)
+            CancelStatusDismiss();
+    }
+
     [RelayCommand(CanExecute = nameof(CanStartPrint))]
     private async Task StartPrintAsync()
     {
@@ -121,7 +130,7 @@ public sealed partial class PrintWorkspaceViewModel : ObservableObject
     {
         _printCts?.Cancel();
         _log.Warning("Workspace", "用户请求取消打印队列。");
-        SetStatus("正在取消打印队列…", AppStatusSeverity.Warning);
+        SetStatus("正在取消打印队列…", AppStatusSeverity.Warning, autoDismiss: false);
     }
 
     [RelayCommand]
@@ -182,7 +191,7 @@ public sealed partial class PrintWorkspaceViewModel : ObservableObject
             {
                 PrintProgressCurrent = r.current;
                 PrintProgressTotal = r.total;
-                SetStatus($"正在打印 ({r.current}/{r.total})：{r.file.FileName}", AppStatusSeverity.Informational);
+                SetStatus($"正在打印 ({r.current}/{r.total})：{r.file.FileName}", AppStatusSeverity.Informational, autoDismiss: false);
             });
 
             var result = await _printQueue.ProcessAsync(files, printSettings, progress, _printCts.Token);
@@ -256,10 +265,44 @@ public sealed partial class PrintWorkspaceViewModel : ObservableObject
         NotifyPrintCommandsChanged();
     }
 
-    private void SetStatus(string message, AppStatusSeverity severity)
+    private void SetStatus(string message, AppStatusSeverity severity, bool autoDismiss = true)
     {
+        CancelStatusDismiss();
+
         StatusMessage = message;
         StatusSeverity = severity;
         IsStatusOpen = !string.IsNullOrWhiteSpace(message);
+
+        if (autoDismiss && IsStatusOpen)
+            _ = ScheduleStatusDismissAsync();
+    }
+
+    private void CancelStatusDismiss()
+    {
+        _statusDismissCts?.Cancel();
+        _statusDismissCts?.Dispose();
+        _statusDismissCts = null;
+    }
+
+    private async Task ScheduleStatusDismissAsync()
+    {
+        var cts = new CancellationTokenSource();
+        _statusDismissCts = cts;
+
+        try
+        {
+            await Task.Delay(StatusAutoDismissDelay, cts.Token);
+            IsStatusOpen = false;
+        }
+        catch (OperationCanceledException)
+        {
+            // superseded by a newer status
+        }
+        finally
+        {
+            if (ReferenceEquals(_statusDismissCts, cts))
+                _statusDismissCts = null;
+            cts.Dispose();
+        }
     }
 }

@@ -37,10 +37,6 @@
                             Text="选择本机已安装的打印机"
                             TextWrapping="WrapWholeWords" />
                     </StackPanel>
-                    <TextBlock
-                        Style="{ThemeResource BodyTextBlockStyle}"
-                        Text="{Binding SelectedPrinter.DisplayName, TargetNullValue=尚未选择打印机}"
-                        TextWrapping="WrapWholeWords" />
                     <ComboBox
                         HorizontalAlignment="Stretch"
                         IsEnabled="{Binding IsPrinterComboEnabled}"
